@@ -1,0 +1,70 @@
+version: '3'
+
+services:
+    web: 
+        build:
+            context: ./docker/nginx
+        container_name: ${PROJECT_ID}-web
+        volumes:
+            - ./src:/var/www/html
+            - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+            - ./docker/nginx/sites/:/etc/nginx/sites-available
+            - ./docker/nginx/sites/:/etc/nginx/sites-enabled
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d
+        ports:
+            - 80:80
+            - 443:443
+        environment:
+            - NGINX_HOST=${NGINX_HOST}
+            - API_HOST=${API_HOST}
+            - WEBSITE_HOST=${WEBSITE_HOST}
+        depends_on:
+            - php-fpm
+        restart: always
+
+    node:
+        build:
+            context: ./docker/node
+            args:
+                NODE_VERSION: ${NODE_VERSION}
+        container_name: ${PROJECT_ID}-node
+    
+    php-fpm:
+        build:
+            context: ./docker/php-fpm
+            args:
+                PHP_VERSION: ${PHP_VERSION}
+        container_name: ${PROJECT_ID}-php-fpm
+        volumes:
+            - ./src:/var/www/html
+        ports:
+            - 9000:80
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: ${PROJECT_ID}-phpmyadmin
+        ports:
+            - 8081:80
+        environment:
+            - PMA_HOST=${MYSQL_HOST}
+        depends_on:
+            - mysql
+        volumes:
+            - "./docker/phpmyadmin/sessions:/sessions"
+    
+    mysql:
+        build:
+            context: ./docker/mysql
+            args:
+                MYSQL_VERSION: ${MYSQL_VERSION}
+        container_name: ${PROJECT_ID}-mysql
+        env_file: 
+            - ./.env
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        volumes:
+            - ./docker/mysql/data.sql:/docker-entrypoint-initdb.d/data.sql
+            - ./docker/mysql/data:/var/lib/mysql

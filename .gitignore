@@ -1,0 +1,16 @@
+.env
+src/**/node_modules
+
+# docker files
+docker/mysql/data/*
+!docker/mysql/data/.gitkeep 
+
+docker/nginx/logs
+
+# temporary files
+*.cache
+
+# config files
+docker/nginx/sites/website.conf
+
+.vscode
